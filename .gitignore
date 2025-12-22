@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+dist/
+build/
+
+# Virtual Environment
+.venv/
+venv/
+env/
+ENV/
+
+# Environment variables
+.env
+.env.*
+
+# Airflow
+airflow/logs/
+airflow/*.cfg
+airflow/__pycache__/
+
+# IDEs
+.vscode/
+.idea/
+*.iml
+
