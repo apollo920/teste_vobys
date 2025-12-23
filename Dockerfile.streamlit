@@ -1,0 +1,21 @@
+FROM python:3.10-slim
+
+# Evita buffers (logs em tempo real)
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+# Copia requirements da raiz
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copia somente o app do Streamlit
+COPY streamlit_app ./streamlit_app
+
+# Define o diretório padrão do app
+WORKDIR /app/streamlit_app
+
+EXPOSE 8501
+
+CMD ["streamlit", "run", "app.py", "--server.address=0.0.0.0", "--server.port=8501"]

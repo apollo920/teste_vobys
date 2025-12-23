@@ -1,0 +1,16 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Copia requirements da raiz
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copia todo o código do projeto
+COPY src ./src
+
+# Variáveis de ambiente
+ENV PYTHONPATH=/app
+
+CMD ["python", "-m", "src.etl.run_etl"]

@@ -2,11 +2,56 @@ version: "3.8"
 
 services:
   postgres:
-    image: postgres:13
-    container_name: camara_postgres
+    image: postgres:15
+    container_name: postgres
     environment:
       POSTGRES_DB: camara
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
       - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./src/db/models.sql:/docker-entrypoint-initdb.d/01_models.sql
+
+  airflow-webserver:
+    image: apache/airflow:2.9.0
+    container_name: airflow-webserver
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+
+  airflow-scheduler:
+    image: apache/airflow:2.9.0
+    container_name: airflow-scheduler
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+
+  etl:
+    build:
+      context: .
+      dockerfile: Dockerfile.etl
+    container_name: etl
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+
+  streamlit:
+    build:
+      context: .
+      dockerfile: Dockerfile.streamlit
+    container_name: streamlit
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+
+
+volumes:
+  postgres_data:
