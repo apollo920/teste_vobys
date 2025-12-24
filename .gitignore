@@ -28,7 +28,5 @@ airflow/__pycache__/
 .idea/
 *.iml
 
-# docker 
-docker-compose.prod.yml
 
 
