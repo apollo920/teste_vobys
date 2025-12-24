@@ -1,34 +1,92 @@
-version: "3.8"
-
 services:
   postgres:
     image: postgres:15
     container_name: postgres
     environment:
-      POSTGRES_DB: camara
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./src/db/models.sql:/docker-entrypoint-initdb.d/01_models.sql
+      # Ordem de execução dos scripts:
+      - ./src/db/init/01_create_databases.sql:/docker-entrypoint-initdb.d/01_create_databases.sql
+      - ./src/db/schemas/02_camara_schema.sql:/docker-entrypoint-initdb.d/02_camara_schema.sql
+      - ./airflow/init/03_airflow_setup.sql:/docker-entrypoint-initdb.d/03_airflow_setup.sql 
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d camara && pg_isready -U postgres -d airflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  airflow-init:
+    image: apache/airflow:2.9.0
+    container_name: airflow-init
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - airflow_logs:/opt/airflow/logs
+      - ./dags:/opt/airflow/dags
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        echo "Aguardando Postgres estar completamente pronto..."
+        sleep 10
+        
+        echo "Testando conexão com o banco airflow..."
+        airflow db check || exit 1
+        
+        echo "Iniciando migração do banco de dados..."
+        airflow db migrate
+        
+        echo "Criando usuário admin..."
+        airflow users create \
+          --username "$${AIRFLOW_ADMIN_USER}" \
+          --password "$${AIRFLOW_ADMIN_PASSWORD}" \
+          --firstname Admin \
+          --lastname User \
+          --role Admin \
+          --email "$${AIRFLOW_ADMIN_EMAIL}" 2>&1 | grep -v "already exists" || true
+        
+        echo "✓ Inicialização concluída com sucesso!"
 
   airflow-webserver:
     image: apache/airflow:2.9.0
     container_name: airflow-webserver
     env_file:
       - .env
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - airflow_logs:/opt/airflow/logs
+      - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
-      - postgres
+      airflow-init:
+        condition: service_completed_successfully
+    command: webserver
+    restart: always
+    user: root
 
   airflow-scheduler:
     image: apache/airflow:2.9.0
     container_name: airflow-scheduler
     env_file:
       - .env
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - airflow_logs:/opt/airflow/logs
+      - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
-      - postgres
+      airflow-init:
+        condition: service_completed_successfully
+    command: scheduler
+    restart: always
+    user: root
 
   etl:
     build:
@@ -38,7 +96,16 @@ services:
     env_file:
       - .env
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+    command: >
+      sh -c "
+      echo 'Executando ETL inicial...' &&
+      python -m src.etl.run_etl &&
+      echo 'ETL inicial concluído! Container ficará ativo para execuções do Airflow.' &&
+      tail -f /dev/null
+      "
+    restart: unless-stopped
 
   streamlit:
     build:
@@ -50,8 +117,9 @@ services:
     env_file:
       - .env
     depends_on:
-      - postgres
-
+      postgres:
+        condition: service_healthy
 
 volumes:
   postgres_data:
+  airflow_logs:

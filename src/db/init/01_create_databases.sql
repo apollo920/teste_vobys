@@ -1,0 +1,2 @@
+CREATE DATABASE camara;
+CREATE DATABASE airflow;

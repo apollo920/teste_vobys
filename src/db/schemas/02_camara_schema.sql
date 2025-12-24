@@ -1,4 +1,7 @@
--- tabela de deputados
+-- Conectar ao banco de dados camara
+\c camara
+
+-- Tabela de deputados
 CREATE TABLE IF NOT EXISTS deputados (
     id_deputado INTEGER PRIMARY KEY,
     nome VARCHAR(100) NOT NULL,
@@ -9,20 +12,17 @@ CREATE TABLE IF NOT EXISTS deputados (
     data_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_deputados_partido
-    ON deputados(sigla_partido);
+CREATE INDEX idx_deputados_partido ON deputados(sigla_partido);
+CREATE INDEX idx_deputados_uf ON deputados(sigla_uf);
 
-CREATE INDEX idx_deputados_uf
-    ON deputados(sigla_uf);
-
--- tabela de partidos 
+-- Tabela de partidos 
 CREATE TABLE IF NOT EXISTS partidos (
     id_partido INTEGER PRIMARY KEY,
     sigla VARCHAR(30) NOT NULL,
     nome VARCHAR(100) NOT NULL
 );
 
--- tabela de proposições
+-- Tabela de proposições
 CREATE TABLE IF NOT EXISTS proposicoes (
     id_proposicao INTEGER PRIMARY KEY,
     sigla_tipo VARCHAR(10),
@@ -33,5 +33,3 @@ CREATE TABLE IF NOT EXISTS proposicoes (
     status_descricao TEXT,
     data_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
-
