@@ -172,24 +172,37 @@ AIRFLOW_ADMIN_EMAIL=admin@local
 ### 🪟 Windows | 🐧 Linux | 🍎 macOS
 Os passos são idênticos para todos os sistemas.
 
-### 1️⃣ Clonar o repositório
+### Clonar o repositório
 ```bash
-git clone https://github.com/seu-usuario/vobys.git
+git clone https://github.com/apollo920/vobys.git
 cd vobys
 ```
+### Criar o venv
+```bash
+py -3.10 -m venv venv
+```
+### Ativar o venv
+```bash
+venv/Scripts/activate
+```
 
-### 2️⃣ Criar o .env
+### Instalar as bibliotecas dentro do venv
+```bash
+pip install -r requirements.txt
+```
+
+### Criar o .env
 ```bash
 cp .env.example .env
 ```
 Ajuste as variáveis conforme necessário.
 
-### 3️⃣ Subir toda a stack
+### Subir toda a stack
 ```bash
 docker-compose up -d --build
 ```
 
-### 4️⃣ Acessos
+### Acessos
 
 | Serviço    | URL                    |
 |------------|------------------------|
@@ -244,3 +257,4 @@ Desenvolvido com 💙 por [Seu Nome]
 
 
 Contribuições são bem-vindas! Sinta-se à vontade para abrir issues e pull requests.
+
